@@ -1,5 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using Serilog;
+using System;
 using System.Reflection;
 
 namespace Clarity.Web
@@ -61,19 +61,19 @@ namespace Clarity.Web
                 }
                 catch (TargetException exception)
                 {
-                    Trace.TraceInformation("Could not invoke Application_Start due to an error in the target class");
+                    Log.Warning("Could not invoke Application_Start due to an error in the target class {message}", exception.Message);
                 }
                 catch (TargetInvocationException exception)
                 {
-                    Trace.TraceInformation("Could not invoke Application_Start due to an error during the invocation");
+                    Log.Error("Could not invoke Application_Start due to an error during the invocation {message}", exception.Message);
                 }
                 catch (TargetParameterCountException exception)
                 {
-                    Trace.TraceInformation("The method signature did not match");
+                    Log.Error("The method signature did not match {message}", exception.Message);
                 }
                 catch (MethodAccessException exception)
                 {
-                    Trace.TraceInformation("The method could not be invoked due to its protection level");
+                    Log.Warning("The method could not be invoked due to its protection level {message}", exception.Message);
                 }
             }
 
