@@ -1,4 +1,5 @@
 ﻿using Clarity.Web;
+using Serilog;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -62,13 +63,11 @@ namespace Clarity.HttpServer
                     var client = await listener.AcceptAsync();
 
                     var application = factory.Create();
-                    
+
                     var length = await client.ReceiveAsync(incomingBuffer, SocketFlags.None);
                     message.Append(Encoding.ASCII.GetString(incomingBuffer.Array, 0, length));
-
-                    Console.WriteLine(message);
-                    var log = $"{DateTime.UtcNow} Received {length} bytes from client\r\n{string.Empty.PadRight(10, '-')}";
-                    Console.WriteLine(log);
+                    Log.Verbose(message.ToString());
+                    Log.Information("Received {length} bytes from client", length);
 
                     message.Clear();
                     message.Append("HTTP/1.1 200 OK\n\n");
@@ -76,9 +75,8 @@ namespace Clarity.HttpServer
                     var outgoingBuffer = new ArraySegment<byte>(Encoding.ASCII.GetBytes(message.ToString()));
 
                     length = await client.SendAsync(outgoingBuffer, SocketFlags.None);
-                    Console.WriteLine(message);
-                    log = $"{DateTime.UtcNow} Sent {length} bytes to client\r\n{string.Empty.PadRight(10, '-')}";
-                    Console.WriteLine(log);
+                    Log.Verbose(message.ToString());
+                    Log.Information("Sent {length} bytes to client", length);
 
                     client.Close();
                 }
