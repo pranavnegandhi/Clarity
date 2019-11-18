@@ -14,10 +14,6 @@ namespace Clarity.HttpServer
 
         private int _port = 9091;
 
-        private Type _applicationType;
-
-        private HttpApplication _application;
-
         public TcpServer(string host, int port)
         {
             if (null == host)
@@ -83,11 +79,11 @@ namespace Clarity.HttpServer
             }
             catch (SocketException exception)
             {
-                Console.WriteLine($"Could not start a server at {_host}:{_port}.\r\nError: {exception.Message}");
+                Log.Fatal($"Could not start a server at {_host}:{_port}.\r\nError: {exception.Message}");
             }
             catch (SecurityException exception)
             {
-                Console.WriteLine($"A security violation occurred while starting a server at {_host}:{_port}.\r\nError: {exception.Message}");
+                Log.Fatal($"A security violation occurred while starting a server at {_host}:{_port}.\r\nError: {exception.Message}");
             }
         }
     }
