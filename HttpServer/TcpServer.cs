@@ -70,8 +70,8 @@ namespace Clarity.HttpServer
                     Log.Verbose(message.ToString());
                     Log.Information("Received {length} bytes from client", length);
 
-                    var app = new AsyncProxy();
-                    app.RunAsync(_handlerCompletionCallback);
+                    var wr = TcpServerWorkerRequest.CreateWorkerRequest(incomingBuffer.Array);
+                    ProcessRequest(wr);
                 }
             }
             catch (SocketException exception)
@@ -84,40 +84,109 @@ namespace Clarity.HttpServer
             }
         }
 
-        private async void OnHandlerCompletion(IAsyncResult ar)
+        private void ProcessRequest(TcpServerWorkerRequest wr)
+        {
+            try
+            {
+                var app = new AsyncProxy();
+                app.BeginProcessRequest(wr, _handlerCompletionCallback);
+            }
+            catch
+            {
+                try
+                {
+                    // Send a bad request response if the context cannot
+                    // be created for any reason.
+                    wr.SendStatus(400, "Bad Request");
+                    wr.SendKnownResponseHeader("Content-Type", "text/html; charset=utf8");
+                    var body = Encoding.ASCII.GetBytes("<html><body>Bad Request</body></html>");
+                    wr.SendResponseFromMemory(body, body.Length);
+                    var response = wr.FlushResponse();
+                    SendResponse(response);
+
+                    wr.EndOfRequest();
+                }
+                finally
+                {
+                }
+            }
+        }
+
+        private void OnHandlerCompletion(IAsyncResult ar)
         {
             Log.Information($"Request processing completed");
 
-            var message = new StringBuilder();
+            var wr = (TcpServerWorkerRequest)ar.AsyncState;
+            FinishRequest(wr);
+        }
 
-            message.Clear();
-            message.Append("HTTP/1.1 200 OK\n\n");
-            var length = message.Length;
-            var outgoingBuffer = new ArraySegment<byte>(Encoding.ASCII.GetBytes(message.ToString()));
-
-            length = await _client.SendAsync(outgoingBuffer, SocketFlags.None);
-            Log.Verbose(message.ToString());
+        private async void SendResponse(ArraySegment<byte> response)
+        {
+            var length = await _client.SendAsync(response, SocketFlags.None);
             Log.Information("Sent {length} bytes to client", length);
 
             _client.Close();
+        }
+
+        private void FinishRequest(TcpServerWorkerRequest wr)
+        {
+            wr.SendStatus(200, "OK");
+            wr.SendKnownResponseHeader("Content-Type", "text/html; charset=utf8");
+            var body = Encoding.ASCII.GetBytes("<html><body>Hello, world</body></html>");
+            wr.SendResponseFromMemory(body, body.Length);
+            var response = wr.FlushResponse();
+            SendResponse(response);
+
+            wr.EndOfRequest();
         }
     }
 
     internal class AsyncProxy
     {
-        private AsyncCallback _callback;
-
-        public void RunAsync(AsyncCallback cb)
+        public void BeginProcessRequest(TcpServerWorkerRequest wr, AsyncCallback cb)
         {
-            _callback = cb;
-            var t = new Thread(new ThreadStart(Execute));
+            Result = new AsyncResult(cb, wr);
+
+            var t = new Thread(new ThreadStart(() =>
+            {
+                Thread.Sleep(1000);
+                cb.Invoke(Result);
+            }));
+
             t.Start();
         }
 
-        private void Execute()
+        internal IAsyncResult Result
         {
-            Thread.Sleep(1000);
-            _callback.Invoke(null);
+            get;
+            private set;
+        }
+    }
+
+    internal class AsyncResult : IAsyncResult
+    {
+        private AsyncCallback _callback;
+
+        internal AsyncResult(AsyncCallback cb, object state)
+        {
+            _callback = cb;
+            AsyncState = state;
+        }
+
+        public object AsyncState
+        {
+            get;
+            private set;
+        }
+
+        public WaitHandle AsyncWaitHandle => null;
+
+        public bool CompletedSynchronously => false;
+
+        public bool IsCompleted
+        {
+            get;
+            private set;
         }
     }
 }
