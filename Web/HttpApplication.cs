@@ -10,10 +10,6 @@ namespace Clarity.Web
 
         public event EventHandler<EventArgs> EndRequest;
 
-        private HttpContext _initContext;
-
-        private HttpContext _context;
-
         private delegate void ApplicationStart(object sender);
 
         private static ApplicationStart _applicationStartInvocation;
@@ -33,19 +29,6 @@ namespace Clarity.Web
         public virtual void Init()
         {
             OnBeginRequest();
-        }
-
-        public HttpContext Context
-        {
-            get
-            {
-                if (null != _context)
-                {
-                    return _context;
-                }
-
-                return _initContext;
-            }
         }
 
         public static void OnApplicationStart(object sender)
