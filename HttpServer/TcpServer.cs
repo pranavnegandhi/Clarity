@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security;
 using System.Text;
+using System.Threading;
 
 namespace Clarity.HttpServer
 {
@@ -13,6 +14,10 @@ namespace Clarity.HttpServer
         private string _host = null;
 
         private int _port = 9091;
+
+        private AsyncCallback _handlerCompletionCallback;
+
+        private Socket _client;
 
         public TcpServer(string host, int port)
         {
@@ -54,27 +59,19 @@ namespace Clarity.HttpServer
                 var incomingBuffer = new ArraySegment<byte>(new byte[1024]);
                 var message = new StringBuilder();
 
+                _handlerCompletionCallback = new AsyncCallback(OnHandlerCompletion);
+
                 while (true)
                 {
-                    var client = await listener.AcceptAsync();
+                    _client = await listener.AcceptAsync();
 
-                    var application = factory.Create();
-
-                    var length = await client.ReceiveAsync(incomingBuffer, SocketFlags.None);
+                    var length = await _client.ReceiveAsync(incomingBuffer, SocketFlags.None);
                     message.Append(Encoding.ASCII.GetString(incomingBuffer.Array, 0, length));
                     Log.Verbose(message.ToString());
                     Log.Information("Received {length} bytes from client", length);
 
-                    message.Clear();
-                    message.Append("HTTP/1.1 200 OK\n\n");
-                    length = message.Length;
-                    var outgoingBuffer = new ArraySegment<byte>(Encoding.ASCII.GetBytes(message.ToString()));
-
-                    length = await client.SendAsync(outgoingBuffer, SocketFlags.None);
-                    Log.Verbose(message.ToString());
-                    Log.Information("Sent {length} bytes to client", length);
-
-                    client.Close();
+                    var app = new AsyncProxy();
+                    app.RunAsync(_handlerCompletionCallback);
                 }
             }
             catch (SocketException exception)
@@ -85,6 +82,42 @@ namespace Clarity.HttpServer
             {
                 Log.Fatal($"A security violation occurred while starting a server at {_host}:{_port}.\r\nError: {exception.Message}");
             }
+        }
+
+        private async void OnHandlerCompletion(IAsyncResult ar)
+        {
+            Log.Information($"Request processing completed");
+
+            var message = new StringBuilder();
+
+            message.Clear();
+            message.Append("HTTP/1.1 200 OK\n\n");
+            var length = message.Length;
+            var outgoingBuffer = new ArraySegment<byte>(Encoding.ASCII.GetBytes(message.ToString()));
+
+            length = await _client.SendAsync(outgoingBuffer, SocketFlags.None);
+            Log.Verbose(message.ToString());
+            Log.Information("Sent {length} bytes to client", length);
+
+            _client.Close();
+        }
+    }
+
+    internal class AsyncProxy
+    {
+        private AsyncCallback _callback;
+
+        public void RunAsync(AsyncCallback cb)
+        {
+            _callback = cb;
+            var t = new Thread(new ThreadStart(Execute));
+            t.Start();
+        }
+
+        private void Execute()
+        {
+            Thread.Sleep(1000);
+            _callback.Invoke(null);
         }
     }
 }
