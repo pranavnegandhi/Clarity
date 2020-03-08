@@ -1,2 +1,6 @@
 Debug
 Release
+obj
+bin
+.vscode
+.DS_Store
