@@ -28,7 +28,6 @@ namespace Clarity.Web
 
         public virtual void Init()
         {
-            OnBeginRequest();
         }
 
         public static void OnApplicationStart(object sender)
