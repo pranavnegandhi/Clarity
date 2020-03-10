@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Security;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Clarity.HttpServer
 {
@@ -218,45 +219,10 @@ namespace Clarity.HttpServer
     {
         public void BeginProcessRequest(TcpServerWorkerRequest wr, AsyncCallback cb)
         {
-            Result = new AsyncResult(wr);
+            var task = new Task((ar) => Task.Delay(1000).GetAwaiter().GetResult(), wr);
+            task.RunSynchronously();
 
-            var t = new Thread(new ThreadStart(() =>
-            {
-                Thread.Sleep(1000);
-                cb.Invoke(Result);
-            }));
-
-            t.Start();
-        }
-
-        internal IAsyncResult Result
-        {
-            get;
-            private set;
-        }
-    }
-
-    internal class AsyncResult : IAsyncResult
-    {
-        internal AsyncResult(object state)
-        {
-            AsyncState = state;
-        }
-
-        public object AsyncState
-        {
-            get;
-            private set;
-        }
-
-        public WaitHandle AsyncWaitHandle => null;
-
-        public bool CompletedSynchronously => false;
-
-        public bool IsCompleted
-        {
-            get;
-            private set;
+            cb.Invoke(task);
         }
     }
 }
