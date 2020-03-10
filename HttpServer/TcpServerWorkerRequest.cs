@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Clarity.Web;
 
 namespace Clarity.HttpServer
 {
@@ -9,7 +10,7 @@ namespace Clarity.HttpServer
     /// 
     /// Analogous to the ISAPIWorkerRequest used in the ASP.NET pipeline.
     /// </summary>
-    internal class TcpServerWorkerRequest
+    internal class TcpServerWorkerRequest : WorkerRequest
     {
         /// <summary>
         /// All requests are always HTTP/1.1 in this implementation.
@@ -210,6 +211,11 @@ namespace Clarity.HttpServer
             }
         }
 
+        internal void Initialize()
+        {
+            var request = Encoding.UTF8.GetString(_segment);
+        }
+
         /// <summary>
         /// Factory to create instances of the <code>TcpServerWorkerRequest</code> class.
         /// </summary>
@@ -227,7 +233,13 @@ namespace Clarity.HttpServer
                 throw new ArgumentException(nameof(segment.Length));
             }
 
-            return new TcpServerWorkerRequest(segment);
+            var wr = new TcpServerWorkerRequest(segment);
+            if (null != wr)
+            {
+                wr.Initialize();
+            }
+
+            return wr;
         }
     }
 }
