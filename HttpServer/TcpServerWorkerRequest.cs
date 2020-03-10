@@ -1,39 +1,80 @@
 using System;
-using System.Collections;
 using System.Text;
 
 namespace Clarity.HttpServer
 {
+    /// <summary>
+    /// Holds deserialized instances of incoming and outgoing messages
+    /// in a byte array.
+    /// 
+    /// Analogous to the ISAPIWorkerRequest used in the ASP.NET pipeline.
+    /// </summary>
     internal class TcpServerWorkerRequest
     {
+        /// <summary>
+        /// All requests are always HTTP/1.1 in this implementation.
+        /// </summary>
         private const string HttpVersion = "HTTP/1.1 ";
 
+        /// <summary>
+        /// Stores the incoming request as a byte array.
+        /// </summary>
         private byte[] _segment;
 
+        /// <summary>
+        /// The ISAPIWorkerRequest class uses a custom class called
+        /// MemoryBytes to store many of its internal data structures
+        /// due to speed and memory efficiency.
+        /// 
+        /// For our purposes, a StringBuilder suffices.
+        /// </summary>
+        /// <returns></returns>
         private StringBuilder _sendStatus = new StringBuilder();
 
+        /// <summary>
+        /// Boolean that's switched on when the value of the response status
+        /// is changed by the server.
+        /// </summary>
         private bool _statusSet = false;
 
+        /// <summary>
+        /// Stores the headers in a StringBuilder to be serialized
+        /// into a string at the time of dispatching to the client.
+        /// </summary>
+        /// <returns></returns>
         private StringBuilder _headers = new StringBuilder();
 
+        /// <summary>
+        /// Indicates if the headers have been dispatched to the client.
+        /// Headers can be sent only once in a single request-response cycle.
+        /// </summary>
         private bool _headersSent = false;
 
+        /// <summary>
+        /// Values of the response status, headers and body serialized into a byte array.
+        /// </summary>
         private byte[] _responseStatus;
 
         private byte[] _responseHeaders;
 
         private byte[] _responseBody;
 
-        public delegate void SendResponseDelegate(ArraySegment<byte> response);
-
-        public SendResponseDelegate SendResponse = null;
-
+        /// <summary>
+        /// Constructor for the TcpServerWorkerRequest class. Not invoked
+        /// directly, but through the CreateWorkerRequest static method.
+        /// </summary>
+        /// <param name="segment">The request serialized into a byte array.</param>
         internal TcpServerWorkerRequest(byte[] segment)
         {
             _segment = new byte[segment.Length];
             segment.CopyTo(_segment, 0);
         }
 
+        /// <summary>
+        /// Sets the status code of the response and saves it in a field.
+        /// </summary>
+        /// <param name="statusCode">HTTP status code from the standard.</param>
+        /// <param name="statusDescription">A text description of the status.</param>
         public void SendStatus(int statusCode, string statusDescription)
         {
             _sendStatus.Clear();
@@ -44,6 +85,11 @@ namespace Clarity.HttpServer
             _statusSet = true;
         }
 
+        /// <summary>
+        /// Appends a header key-value pair as a string to the response header.
+        /// </summary>
+        /// <param name="header">The name of the header.</param>
+        /// <param name="value">The value of the header.</param>
         public void SendKnownResponseHeader(string header, string value)
         {
             if (_headersSent)
@@ -57,6 +103,11 @@ namespace Clarity.HttpServer
             _headers.Append("\r\n");
         }
 
+        /// <summary>
+        /// Sends a programmatically generated response (as opposed to reading a file or stream).
+        /// </summary>
+        /// <param name="data">The data to be sent to the client in the body of the response.</param>
+        /// <param name="length">The length of the body.</param>
         public void SendResponseFromMemory(byte[] data, int length)
         {
             if (!_headersSent)
@@ -70,6 +121,9 @@ namespace Clarity.HttpServer
             }
         }
 
+        /// <summary>
+        /// Serializes the response status and headers into a byte array.
+        /// </summary>
         private void SendHeaders()
         {
             if (!_headersSent)
@@ -89,6 +143,10 @@ namespace Clarity.HttpServer
             }
         }
 
+        /// <summary>
+        /// Makes a copy of the byte array containing the body of the response into an internal field.
+        /// </summary>
+        /// <param name="body"></param>
         private void AddBodyToResponse(byte[] body)
         {
             if (null == _responseBody)
@@ -99,6 +157,12 @@ namespace Clarity.HttpServer
             body.CopyTo(_responseBody, 0);
         }
 
+        /// <summary>
+        /// Concatenates all the different fragments of the response (HTTP version identifier,
+        /// status, headers and body) into a single byte array and returns it to the caller
+        /// as an <code>ArraySegment&lt;byte&gt;</code>.
+        /// </summary>
+        /// <returns></returns>
         public ArraySegment<byte> FlushResponse()
         {
             if (!_headersSent)
@@ -129,6 +193,10 @@ namespace Clarity.HttpServer
             return fragments;
         }
 
+        /// <summary>
+        /// Cleans up the cached fragments of the response and resets the flags
+        /// in preparation for cleanup of this instance.
+        /// </summary>
         public void EndOfRequest()
         {
             if (null != _headers)
@@ -142,6 +210,11 @@ namespace Clarity.HttpServer
             }
         }
 
+        /// <summary>
+        /// Factory to create instances of the <code>TcpServerWorkerRequest</code> class.
+        /// </summary>
+        /// <param name="segment">An serialized byte array of the incoming request.</param>
+        /// <returns></returns>
         internal static TcpServerWorkerRequest CreateWorkerRequest(byte[] segment)
         {
             if (null == segment)
