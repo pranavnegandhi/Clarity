@@ -47,6 +47,18 @@ namespace Clarity.HttpServer
         private AsyncCallback _handlerCompletionCallback;
 
         /// <summary>
+        /// Factory delegate type required to create application instances.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        private delegate IHttpAsyncHandler GetInstance(HttpContext context);
+
+        /// <summary>
+        /// The delegate that creates the application instances.
+        /// </summary>
+        private GetInstance _getInstance;
+
+        /// <summary>
         /// Constructor to instantiate the engine. Called from the Main() method
         /// of the host process.
         /// </summary>
@@ -68,8 +80,10 @@ namespace Clarity.HttpServer
         /// and initialises an instance of the HttpApplication.
         /// </summary>
         /// <returns></returns>
-        public async void Start()
+        public async void Start<T>(HttpApplicationFactory<T> factory) where T : IHttpAsyncHandler, new()
         {
+            _getInstance = factory.GetApplicationInstance;
+
             try
             {
                 // Find an IPv4 address on the host computer and attempt to establish
@@ -140,7 +154,7 @@ namespace Clarity.HttpServer
             try
             {
                 var context = new HttpContext(wr);
-                var app = new AsyncProxy();
+                var app = _getInstance(context);
                 app.BeginProcessRequest(context, _handlerCompletionCallback, wr);
             }
             catch
