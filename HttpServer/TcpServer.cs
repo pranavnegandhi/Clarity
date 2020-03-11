@@ -228,15 +228,4 @@ namespace Clarity.HttpServer
             wr.EndOfRequest();
         }
     }
-
-    internal class AsyncProxy
-    {
-        public void BeginProcessRequest(HttpContext context, AsyncCallback cb, WorkerRequest wr)
-        {
-            var task = new Task((ar) => Task.Delay(1000).GetAwaiter().GetResult(), wr);
-            task.RunSynchronously();
-
-            cb.Invoke(task);
-        }
-    }
 }
