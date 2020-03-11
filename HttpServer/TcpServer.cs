@@ -67,10 +67,8 @@ namespace Clarity.HttpServer
         /// Initiates the incoming connection socket for the network server
         /// and initialises an instance of the HttpApplication.
         /// </summary>
-        /// <param name="factory">The factory class that returns an instance of the HttpApplication.</param>
-        /// <typeparam name="T">The concrete type of the HttpApplication instance.</typeparam>
         /// <returns></returns>
-        public async void Start<T>(HttpApplicationFactory<T> factory) where T : HttpApplication, new()
+        public async void Start()
         {
             try
             {

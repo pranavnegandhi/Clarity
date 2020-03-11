@@ -18,8 +18,7 @@ namespace Clarity
             try
             {
                 var server = new TcpServer(Host, Port);
-                var factory = new HttpApplicationFactory<MyApplication>();
-                server.Start(factory);
+                server.Start();
 
                 Log.Information("TCP server started at {Host}:{Port}.", Host, Port);
             }
