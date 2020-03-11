@@ -73,6 +73,11 @@ namespace Clarity.HttpServer
             segment.CopyTo(_segment, 0);
         }
 
+        /// <summary>
+        /// Parse the different elements from the incoming request array
+        /// and store their positions in fields for later serialization
+        /// into their appropriate static types.
+        /// </summary>
         internal void Initialize()
         {
             // Walk the _segment until the first space character is encountered
@@ -82,6 +87,21 @@ namespace Clarity.HttpServer
             }
 
             _methodSegment = new ArraySegment<byte>(_segment, 0, i);
+        }
+
+        /// <summary>
+        /// Return the HTTP method name of this request. If no method name
+        /// is specified in the request, then it returns GET by default.
+        /// </summary>
+        /// <returns>A string containing the name of the incoming HTTP request.</returns>
+        public override string GetHttpVerbName()
+        {
+            if (null == _methodSegment || _methodSegment.Array == null || _methodSegment.Array.Length == 0)
+            {
+                return "GET";
+            }
+
+            return Encoding.UTF8.GetString(_methodSegment.Array);
         }
 
         /// <summary>

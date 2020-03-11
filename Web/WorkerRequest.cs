@@ -7,5 +7,6 @@ namespace Clarity.Web
     /// </summary>
     public abstract class WorkerRequest
     {
+        public abstract string GetHttpVerbName();
     }
 }
