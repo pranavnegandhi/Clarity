@@ -8,12 +8,54 @@ namespace Clarity.Web
     {
         private readonly WorkerRequest _wr;
 
-        private readonly HttpContext _context;
+        private HttpContext _context;
+
+        private string _httpMethod;
 
         internal HttpRequest(WorkerRequest wr, HttpContext context)
         {
             _wr = wr;
             _context = context;
         }
+
+        internal HttpContext Context
+        {
+            get
+            {
+                return _context;
+            }
+            set
+            {
+                _context = value;
+            }
+        }
+
+        internal HttpResponse Response
+        {
+            get
+            {
+                if (null == _context)
+                {
+                    return null;
+                }
+
+                return _context.Response;
+            }
+        }
+
+        public string HttpMethod
+        {
+            get
+            {
+                // Directly from worker request
+                if (_httpMethod == null)
+                {
+                    _httpMethod = _wr.GetHttpVerbName();
+                }
+
+                return _httpMethod;
+            }
+        }
+
     }
 }
