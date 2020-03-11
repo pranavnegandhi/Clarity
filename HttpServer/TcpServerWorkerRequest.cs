@@ -22,6 +22,8 @@ namespace Clarity.HttpServer
         /// </summary>
         private byte[] _segment;
 
+        private ArraySegment<byte> _methodSegment;
+
         /// <summary>
         /// The ISAPIWorkerRequest class uses a custom class called
         /// MemoryBytes to store many of its internal data structures
@@ -69,6 +71,17 @@ namespace Clarity.HttpServer
         {
             _segment = new byte[segment.Length];
             segment.CopyTo(_segment, 0);
+        }
+
+        internal void Initialize()
+        {
+            // Walk the _segment until the first space character is encountered
+            var i = 0;
+            while (_segment[i++] != 32)
+            {
+            }
+
+            _methodSegment = new ArraySegment<byte>(_segment, 0, i);
         }
 
         /// <summary>
@@ -209,11 +222,6 @@ namespace Clarity.HttpServer
             {
                 _sendStatus = null;
             }
-        }
-
-        internal void Initialize()
-        {
-            var request = Encoding.UTF8.GetString(_segment);
         }
 
         /// <summary>
