@@ -1,6 +1,7 @@
 ﻿using Clarity.Web;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security;
@@ -140,8 +141,9 @@ namespace Clarity.HttpServer
         {
             try
             {
+                var context = new HttpContext(wr);
                 var app = new AsyncProxy();
-                app.BeginProcessRequest(wr, _handlerCompletionCallback);
+                app.BeginProcessRequest(context, _handlerCompletionCallback, wr);
             }
             catch
             {
@@ -217,7 +219,7 @@ namespace Clarity.HttpServer
 
     internal class AsyncProxy
     {
-        public void BeginProcessRequest(TcpServerWorkerRequest wr, AsyncCallback cb)
+        public void BeginProcessRequest(HttpContext context, AsyncCallback cb, WorkerRequest wr)
         {
             var task = new Task((ar) => Task.Delay(1000).GetAwaiter().GetResult(), wr);
             task.RunSynchronously();
