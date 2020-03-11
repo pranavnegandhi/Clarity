@@ -1,12 +1,6 @@
 ﻿namespace Clarity.Web
 {
-    public class HttpApplicationFactory<T> where T : HttpApplication, new()
+    public class HttpApplicationFactory
     {
-        public HttpApplication Create()
-        {
-            var application = new T();
-
-            return application;
-        }
     }
 }
