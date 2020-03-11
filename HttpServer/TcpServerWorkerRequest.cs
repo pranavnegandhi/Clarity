@@ -86,7 +86,7 @@ namespace Clarity.HttpServer
             {
             }
 
-            _methodSegment = new ArraySegment<byte>(_segment, 0, i);
+            _methodSegment = new ArraySegment<byte>(_segment, 0, i - 1);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Clarity.HttpServer
                 return "GET";
             }
 
-            return Encoding.UTF8.GetString(_methodSegment.Array);
+            return Encoding.UTF8.GetString(_methodSegment.Array, 0, _methodSegment.Count);
         }
 
         /// <summary>
