@@ -8,12 +8,24 @@ namespace Clarity.Web
     {
         private readonly WorkerRequest _wr;
 
-        private readonly HttpContext _context;
+        private HttpContext _context;
 
         public HttpResponse(WorkerRequest wr, HttpContext context)
         {
             _wr = wr;
             _context = context;
+        }
+
+        internal HttpContext Context
+        {
+            get
+            {
+                return _context;
+            }
+            set
+            {
+                _context = value;
+            }
         }
     }
 }
